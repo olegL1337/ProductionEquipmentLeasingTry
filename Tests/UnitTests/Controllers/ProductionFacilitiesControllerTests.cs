@@ -1,0 +1,104 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using Moq;
+using ProductionEquipmentLeasing.API.Controllers;
+using ProductionEquipmentLeasing.Application.DTOs;
+using ProductionEquipmentLeasing.Application.Interfaces.Services;
+using Xunit;
+
+namespace Tests.UnitTests.Controllers
+{
+    public class ProductionFacilitiesControllerTests
+    {
+        private readonly Mock<IProductionFacilityService> _serviceMock;
+        private readonly ProductionFacilitiesController _controller;
+
+        public ProductionFacilitiesControllerTests()
+        {
+            _serviceMock = new Mock<IProductionFacilityService>();
+            _controller = new ProductionFacilitiesController(_serviceMock.Object);
+        }
+
+        [Fact]
+        public async Task GetById_ReturnsOk_WithProductionFacilityDto()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+            var dto = new ProductionFacilityDto { Id = id, Name = "FacilityA" };
+            _serviceMock.Setup(s => s.GetByIdAsync(id)).ReturnsAsync(dto);
+
+            // Act
+            var result = await _controller.GetById(id);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+            Assert.Equal(dto, okResult.Value);
+        }
+
+        [Fact]
+        public async Task GetAll_ReturnsOk_WithListOfProductionFacilityDto()
+        {
+            // Arrange
+            var dtos = new List<ProductionFacilityDto>
+            {
+                new ProductionFacilityDto { Id = Guid.NewGuid(), Name = "FacilityA" }
+            };
+            _serviceMock.Setup(s => s.GetAllAsync()).ReturnsAsync(dtos);
+
+            // Act
+            var result = await _controller.GetAll();
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+            Assert.Equal(dtos, okResult.Value);
+        }
+
+        [Fact]
+        public async Task Create_ReturnsOk_WithCreatedId()
+        {
+            // Arrange
+            var createDto = new CreateProductionFacilityDto { Name = "FacilityA" };
+            var createdId = Guid.NewGuid();
+            _serviceMock.Setup(s => s.CreateAsync(createDto)).ReturnsAsync(createdId);
+
+            // Act
+            var result = await _controller.Create(createDto);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+            Assert.Equal(createdId, okResult.Value);
+        }
+
+        [Fact]
+        public async Task Update_ReturnsNoContent()
+        {
+            // Arrange
+            var updateDto = new UpdateProductionFacilityDto { Id = Guid.NewGuid(), Name = "FacilityB" };
+            _serviceMock.Setup(s => s.UpdateAsync(updateDto)).Returns(Task.CompletedTask);
+
+            // Act
+            var result = await _controller.Update(updateDto);
+
+            // Assert
+            Assert.IsType<NoContentResult>(result);
+            _serviceMock.Verify(s => s.UpdateAsync(updateDto), Times.Once);
+        }
+
+        [Fact]
+        public async Task Delete_ReturnsNoContent()
+        {
+            // Arrange
+            var id = Guid.NewGuid();
+            _serviceMock.Setup(s => s.DeleteAsync(id)).Returns(Task.CompletedTask);
+
+            // Act
+            var result = await _controller.Delete(id);
+
+            // Assert
+            Assert.IsType<NoContentResult>(result);
+            _serviceMock.Verify(s => s.DeleteAsync(id), Times.Once);
+        }
+    }
+}
